@@ -8,8 +8,8 @@
 *.ear
 
 # 환경 파일
-.env
-.env.dev
+#.env
+#.env.dev
 
 # Gradle 캐시
 .gradle/build/
