@@ -3,7 +3,7 @@
 /target/
 /out/
 *.class
-*.jar
+# *.jar  # 이 줄을 주석 처리하거나 제거
 *.war
 *.ear
 
@@ -63,3 +63,8 @@ desktop.ini
 *.seed
 *.rdb
 *.lock
+
+# Gradle Wrapper 예외 추가
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
