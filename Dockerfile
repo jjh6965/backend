@@ -12,7 +12,6 @@ WORKDIR /app
 # Gradle 설정 파일과 스크립트 복사
 # COPY gradle/ /app/gradle/  20250617 수정전
 COPY gradle/wrapper/ /app/gradle/wrapper/
-
 COPY gradlew /app/
 COPY build.gradle /app/
 COPY settings.gradle /app/
