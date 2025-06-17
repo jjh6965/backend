@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y findutils && rm -rf /var/lib/apt/lists/
 WORKDIR /app
 
 # Gradle 설정 파일과 스크립트 복사
-COPY gradle/ /app/gradle/
+# COPY gradle/ /app/gradle/  250617 수정전
+COPY gradle/wrapper/ /app/gradle/wrapper/
+
 COPY gradlew /app/
 COPY build.gradle /app/
 COPY settings.gradle /app/
@@ -26,8 +28,8 @@ RUN ls -la /app && ls -la /app/gradle/wrapper/
 # Gradle Wrapper 실행 권한 부여
 RUN chmod +x gradlew
 
-RUN ./gradlew dependencies --no-daemon --stacktrace --info --debug || { echo "Dependency resolution failed"; exit 1; }
-
+# RUN ./gradlew dependencies --no-daemon --stacktrace --info --debug || { echo "Dependency resolution failed"; exit 1; } 250617 수정전
+RUN /app/gradlew clean bootJar --no-daemon --stacktrace --info --debug --refresh-dependencies -Dorg.gradle.jvmargs="-Xmx2g -Xms512m" || { echo "Gradle build failed"; cat build/reports/*; exit 1; }
 
 # 소스 코드 복사
 #COPY src src
