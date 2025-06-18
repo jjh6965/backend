@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/history/dbfilework")
+@RequestMapping("api/history") // 변경: 상위 경로 통합
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "11.운영관리 > 월별DB작업이력(FILE)", description = "월별 DB 파일 작업 이력을 관리하는 API")
 public class DbFileWorkHistoryController {
