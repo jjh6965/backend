@@ -52,7 +52,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 
 	// MyBatis
-	implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisVersion}" // MyBatis 통합
+	implementation "org.mybatis.spring.boot:mybatis-spring-boot-starter:${mybatisVersion}"// MyBatis 통합
 
 	// MariaDB
 	implementation "org.mariadb.jdbc:mariadb-java-client:${mariadbVersion}"      // MariaDB 연동
@@ -71,7 +71,7 @@ dependencies {
 	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 
 	// 테스트 의존성
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'      // 기본 테스트
+	testImplementation "org.springframework.boot:spring-boot-starter-test"      // 기본 테스트
 	testImplementation "org.mybatis.spring.boot:mybatis-spring-boot-starter-test:${mybatisVersion}" // MyBatis 테스트
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'                 // JUnit 런처
 }
