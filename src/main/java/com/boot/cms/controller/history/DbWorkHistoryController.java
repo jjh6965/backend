@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/history/dbworkhistory")
+@RequestMapping("api/history/dbwork")
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "10.운영관리 > 월별DB작업이력", description = "월별 DB 작업 이력을 관리하는 API")
 public class DbWorkHistoryController {
