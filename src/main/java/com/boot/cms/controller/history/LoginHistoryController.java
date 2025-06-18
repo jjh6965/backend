@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("api/history")
+@RequestMapping("api/history/loginhistory")
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "9.이력관리 > 로그인이력", description = "로그인이력을 관리하는 API")
 public class LoginHistoryController {
