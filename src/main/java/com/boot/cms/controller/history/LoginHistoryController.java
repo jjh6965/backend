@@ -1,3 +1,11 @@
+/*
+ * Controller: LoginHistoryController
+ * Purpose: Handles REST API requests for reservation history management
+ * Endpoints:
+ *   - POST /api/history/login/list: Calls UP_LOGINHISTORY_USERINFO_SELECT
+ *   - POST /api/history/login/save: Calls UP_LOGINHISTORY_USERINFO_TRANSACTION (I/U/D)
+ * Notes: Aligns with procedure param order, logs actions in tb_map_view_hist, uses dynamic params for /save
+ */
 package com.boot.cms.controller.history;
 
 import com.boot.cms.dto.common.ApiResponseDto;
@@ -16,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +32,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("api/history/login")
 @RequiredArgsConstructor
-@io.swagger.v3.oas.annotations.tags.Tag(name = "9.이력관리 > 로그인이력", description = "로그인이력을 관리하는 API")
+@io.swagger.v3.oas.annotations.tags.Tag(name = "9. 이력관리 > 로그인이력", description = "로그인이력을 관리하는 API")
 public class LoginHistoryController {
     private static final Logger logger = LoggerFactory.getLogger(LoginHistoryController.class);
 
@@ -40,14 +49,11 @@ public class LoginHistoryController {
     @PostMapping("/list")
     public ResponseEntity<ApiResponseDto<List<Map<String, Object>>>> loginHistoryList(
             @RequestBody Map<String, Object> request,
-            HttpServletRequest httpRequest
-    ) {
-        String rptCd = "LOGINHISTUSERINFO";
+            HttpServletRequest httpRequest) {
+        String rptCd = "LOGINHISTORYUSERINFOSELECT";
         String jobGb = "GET";
 
         Claims claims = (Claims) httpRequest.getAttribute("user");
-        logger.debug("Received HTTP Request: {}", httpRequest);
-        logger.debug("Extracted Claims from request: {}", claims);
         String empNo = claims != null && claims.getSubject() != null ? claims.getSubject() : null;
 
         if (empNo == null) {
@@ -55,25 +61,30 @@ public class LoginHistoryController {
             return responseEntityUtil.okBodyEntity(null, "01", "인증이 필요합니다.");
         }
 
-        logger.debug("Processing request with empNo: {}, raw pMDATE: {}", empNo, request.get("pMDATE"));
         String pMDATE = (String) request.get("pMDATE");
-        pMDATE = pMDATE != null ? pMDATE.replace("-", "") : "202506"; // YYYYMM 형식으로 변환
-        String pDEBUG = (String) request.get("pDEBUG") != null ? (String) request.get("pDEBUG") : "N";
+        LocalDate today = LocalDate.now();
+        if (pMDATE != null && !pMDATE.matches("\\d{6}")) {
+            return responseEntityUtil.okBodyEntity(null, "01", "pMDATE 형식이 올바르지 않습니다 (YYYYMM 필요).");
+        }
+        pMDATE = pMDATE != null ? pMDATE.replace("-", "") : String.valueOf(today.getYear()) + String.format("%02d", today.getMonthValue());
+        String pDEBUG = (String) request.get("pDEBUG") != null ? (String) request.get("pDEBUG") : "F";
 
-        // 명시적으로 파라미터 설정
         List<String> params = new ArrayList<>();
-        params.add(pMDATE);
-        params.add(pDEBUG);
-        logger.debug("Final params list: {}", params);
+        params.add(pMDATE);              // 1. pMDATE
+        params.add(request.get("pEMPNO") != null ? (String) request.get("pEMPNO") : ""); // 2. pEMPNO
+        params.add(pDEBUG);              // 3. pDEBUG
 
         List<Map<String, Object>> unescapedResultList;
         try {
             unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);
-            logger.debug("Fetched data from MapViewProcessor: {}", unescapedResultList);
             if (unescapedResultList.isEmpty()) {
-                logger.debug("No data found for the given parameters in tb_map_view.");
                 return responseEntityUtil.okBodyEntity(null, "01", "조회 결과가 없습니다.");
             }
+            unescapedResultList.forEach(row -> {
+                if (row.get("DATE") != null) {
+                    row.put("date", row.get("DATE").toString());
+                }
+            });
         } catch (Exception e) {
             errorMessage = "/list unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
             logger.error(this.getErrorMessage(), e);
@@ -81,107 +92,50 @@ public class LoginHistoryController {
         }
 
         return responseEntityUtil.okBodyEntity(unescapedResultList);
-
     }
 
-    // 수정: 등록 엔드포인트, mapViewProcessor로 통합
     @CommonApiResponses
-    @PostMapping("/insert")
+    @PostMapping("/save")
     public ResponseEntity<ApiResponseDto<List<Map<String, Object>>>> insertLoginHistory(
             @RequestBody Map<String, Object> request,
             HttpServletRequest httpRequest) {
-        String rptCd = "LOGINHISTUSERINFO_INSERT";
+        String rptCd = "LOGINHISTORYUSERINFOTRANSACTION";
         String jobGb = "SET";
 
-        // JWT에서 empNo 추출
         Claims claims = (Claims) httpRequest.getAttribute("user");
         String empNo = claims != null && claims.getSubject() != null ? claims.getSubject() : null;
+
         if (empNo == null) {
-            logger.warn("No authentication claims found for insert.");
+            logger.warn("No authentication claims found. Authorization Header: {}", httpRequest.getHeader("Authorization"));
             return responseEntityUtil.okBodyEntity(null, "01", "인증이 필요합니다.");
         }
 
-        // 요청 파라미터 추출
+        // Dynamically get params with basic validation
         List<String> params = mapViewParamsUtil.getParams(request, escapeUtil);
-        if (params.size() < 4) { // empNo, userIp, userCongb, dbCreatedDt 최소 4개 필요
-            return responseEntityUtil.okBodyEntity(null, "01", "필수 파라미터가 부족합니다 (empNo, userIp, userCongb, dbCreatedDt).");
+        if (params.size() != 6) { // Expect 6 params: pGUBUN, pEMPNO, pUSERIP, pSTATUS, pDBCREATEDT, pDEBUG
+            return responseEntityUtil.okBodyEntity(null, "01", "필수 파라미터 6개가 필요합니다.");
         }
-        String userIp = params.get(0);      // userIp
-        String userCongb = params.get(1);   // userCongb
-        String dbCreatedDt = params.get(2); // dbCreatedDt
-        String debug = params.size() > 3 ? params.get(3) : "F"; // debug (기본값: "F")
+        String pGUBUN = params.get(0);
+        if (!List.of("I", "U", "D").contains(pGUBUN)) {
+            return responseEntityUtil.okBodyEntity(null, "01", "pGUBUN은 I, U, 또는 D이어야 합니다.");
+        }
 
-        List<String> finalParams = new ArrayList<>();
-        finalParams.add(empNo);             // empNo를 params 앞에 추가
-        finalParams.add(userIp);
-        finalParams.add(userCongb);
-        finalParams.add(dbCreatedDt);
-        finalParams.add(debug);
-
-        logger.debug("Insert params: {}", finalParams);
+        // Ensure pDEBUG is set
+        params.set(5, params.get(5) != null ? params.get(5) : "F");
 
         List<Map<String, Object>> unescapedResultList;
         try {
-            // mapViewProcessor로 프로시저 호출
-            unescapedResultList = mapViewProcessor.processDynamicView(rptCd, finalParams, empNo, jobGb);
-            if (unescapedResultList.isEmpty()) {
-                return responseEntityUtil.okBodyEntity(null, "01", "등록 결과가 없습니다.");
-            }
-        } catch (Exception e) {
-            errorMessage = "/insert unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
-            logger.error(this.getErrorMessage(), e);
-            return responseEntityUtil.okBodyEntity(null, "99", "서버 내부 오류가 발생했습니다: " + e.getMessage());
+            unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);
+        } catch (IllegalArgumentException e) {
+            errorMessage = "/save unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
+            logger.error(this.getErrorMessage(), e.getMessage(), e);
+            return responseEntityUtil.okBodyEntity(null, "01", e.getMessage());
         }
 
-        return responseEntityUtil.okBodyEntity(unescapedResultList, "00", "등록 성공");
+        if (unescapedResultList.isEmpty()) {
+            return responseEntityUtil.okBodyEntity(null, "01", "결과없음");
+        }
+
+        return responseEntityUtil.okBodyEntity(unescapedResultList);
     }
-
-    // 수정: 삭제 엔드포인트, mapViewProcessor로 통합
-    @CommonApiResponses
-    @DeleteMapping("/delete")
-    public ResponseEntity<ApiResponseDto<List<Map<String, Object>>>> deleteLoginHistory(
-            @RequestBody Map<String, Object> request,
-            HttpServletRequest httpRequest) {
-        String rptCd = "LOGINHISTUSERINFO_DELETE";
-        String jobGb = "DELETE";
-
-        // JWT에서 empNo 추출
-        Claims claims = (Claims) httpRequest.getAttribute("user");
-        String empNo = claims != null && claims.getSubject() != null ? claims.getSubject() : null;
-        if (empNo == null) {
-            logger.warn("No authentication claims found for delete.");
-            return responseEntityUtil.okBodyEntity(null, "01", "인증이 필요합니다.");
-        }
-
-        // 요청 파라미터 추출
-        List<String> params = mapViewParamsUtil.getParams(request, escapeUtil);
-        if (params.size() < 2) { // empNo, dbCreatedDt 최소 2개 필요
-            return responseEntityUtil.okBodyEntity(null, "01", "필수 파라미터가 부족합니다 (empNo, dbCreatedDt).");
-        }
-        String dbCreatedDt = params.get(1); // dbCreatedDt
-        String debug = params.size() > 2 ? params.get(2) : "F"; // debug (기본값: "F")
-
-        List<String> finalParams = new ArrayList<>();
-        finalParams.add(empNo);             // empNo를 params 앞에 추가
-        finalParams.add(dbCreatedDt);
-        finalParams.add(debug);
-
-        logger.debug("Delete params: {}", finalParams);
-
-        List<Map<String, Object>> unescapedResultList;
-        try {
-            // mapViewProcessor로 프로시저 호출
-            unescapedResultList = mapViewProcessor.processDynamicView(rptCd, finalParams, empNo, jobGb);
-            if (unescapedResultList.isEmpty()) {
-                return responseEntityUtil.okBodyEntity(null, "01", "삭제 결과가 없습니다.");
-            }
-        } catch (Exception e) {
-            errorMessage = "/delete unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
-            logger.error(this.getErrorMessage(), e);
-            return responseEntityUtil.okBodyEntity(null, "99", "서버 내부 오류가 발생했습니다: " + e.getMessage());
-        }
-
-        return responseEntityUtil.okBodyEntity(unescapedResultList, "00", "삭제 성공");
-    }
-
 }

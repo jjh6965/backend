@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/public/sample")       
+@RequestMapping("/api/public/sample")
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Sample MyBatis", description = "Endpoints for sample MyBatis queries")
 public class MybaitsClassMethodController {
