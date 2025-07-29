@@ -121,5 +121,4 @@ public class AuthController {
         responseData.put("success", true);
         return responseEntityUtil.okBodyEntity(responseData);
     }
-
 }
