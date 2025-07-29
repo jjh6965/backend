@@ -1,4 +1,3 @@
-// File: com/boot/cms/service/mapview/MapViewProcessor.java
 package com.boot.cms.service.mapview;
 
 import com.boot.cms.aspect.ClientIPAspect;
@@ -10,14 +9,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Component
+@Service
 @RequiredArgsConstructor
 public class MapViewProcessor {
 
@@ -27,7 +26,7 @@ public class MapViewProcessor {
     private final DynamicQueryService dynamicQueryService;
     private final EscapeUtil escapeUtil;
     private final ClientIPAspect clientIPAspect;
-    private final UserAgentUtil userAgentUtil;
+    private final UserAgentUtil userAgentUtil; // "Doubleday" 오타 제거, 세미콜론 추가
 
     @Setter
     @Getter

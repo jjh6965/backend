@@ -14,16 +14,13 @@ import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@RestController
+@RestController("historyLoginHistoryController")
 @RequestMapping("api/history/login")
 @RequiredArgsConstructor
 @io.swagger.v3.oas.annotations.tags.Tag(name = "9.이력관리 > 로그인이력", description = "로그인이력을 관리하는 API")
@@ -84,6 +81,107 @@ public class LoginHistoryController {
         }
 
         return responseEntityUtil.okBodyEntity(unescapedResultList);
+
+    }
+
+    // 수정: 등록 엔드포인트, mapViewProcessor로 통합
+    @CommonApiResponses
+    @PostMapping("/insert")
+    public ResponseEntity<ApiResponseDto<List<Map<String, Object>>>> insertLoginHistory(
+            @RequestBody Map<String, Object> request,
+            HttpServletRequest httpRequest) {
+        String rptCd = "LOGINHISTUSERINFO_INSERT";
+        String jobGb = "SET";
+
+        // JWT에서 empNo 추출
+        Claims claims = (Claims) httpRequest.getAttribute("user");
+        String empNo = claims != null && claims.getSubject() != null ? claims.getSubject() : null;
+        if (empNo == null) {
+            logger.warn("No authentication claims found for insert.");
+            return responseEntityUtil.okBodyEntity(null, "01", "인증이 필요합니다.");
+        }
+
+        // 요청 파라미터 추출
+        List<String> params = mapViewParamsUtil.getParams(request, escapeUtil);
+        if (params.size() < 4) { // empNo, userIp, userCongb, dbCreatedDt 최소 4개 필요
+            return responseEntityUtil.okBodyEntity(null, "01", "필수 파라미터가 부족합니다 (empNo, userIp, userCongb, dbCreatedDt).");
+        }
+        String userIp = params.get(0);      // userIp
+        String userCongb = params.get(1);   // userCongb
+        String dbCreatedDt = params.get(2); // dbCreatedDt
+        String debug = params.size() > 3 ? params.get(3) : "F"; // debug (기본값: "F")
+
+        List<String> finalParams = new ArrayList<>();
+        finalParams.add(empNo);             // empNo를 params 앞에 추가
+        finalParams.add(userIp);
+        finalParams.add(userCongb);
+        finalParams.add(dbCreatedDt);
+        finalParams.add(debug);
+
+        logger.debug("Insert params: {}", finalParams);
+
+        List<Map<String, Object>> unescapedResultList;
+        try {
+            // mapViewProcessor로 프로시저 호출
+            unescapedResultList = mapViewProcessor.processDynamicView(rptCd, finalParams, empNo, jobGb);
+            if (unescapedResultList.isEmpty()) {
+                return responseEntityUtil.okBodyEntity(null, "01", "등록 결과가 없습니다.");
+            }
+        } catch (Exception e) {
+            errorMessage = "/insert unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
+            logger.error(this.getErrorMessage(), e);
+            return responseEntityUtil.okBodyEntity(null, "99", "서버 내부 오류가 발생했습니다: " + e.getMessage());
+        }
+
+        return responseEntityUtil.okBodyEntity(unescapedResultList, "00", "등록 성공");
+    }
+
+    // 수정: 삭제 엔드포인트, mapViewProcessor로 통합
+    @CommonApiResponses
+    @DeleteMapping("/delete")
+    public ResponseEntity<ApiResponseDto<List<Map<String, Object>>>> deleteLoginHistory(
+            @RequestBody Map<String, Object> request,
+            HttpServletRequest httpRequest) {
+        String rptCd = "LOGINHISTUSERINFO_DELETE";
+        String jobGb = "DELETE";
+
+        // JWT에서 empNo 추출
+        Claims claims = (Claims) httpRequest.getAttribute("user");
+        String empNo = claims != null && claims.getSubject() != null ? claims.getSubject() : null;
+        if (empNo == null) {
+            logger.warn("No authentication claims found for delete.");
+            return responseEntityUtil.okBodyEntity(null, "01", "인증이 필요합니다.");
+        }
+
+        // 요청 파라미터 추출
+        List<String> params = mapViewParamsUtil.getParams(request, escapeUtil);
+        if (params.size() < 2) { // empNo, dbCreatedDt 최소 2개 필요
+            return responseEntityUtil.okBodyEntity(null, "01", "필수 파라미터가 부족합니다 (empNo, dbCreatedDt).");
+        }
+        String dbCreatedDt = params.get(1); // dbCreatedDt
+        String debug = params.size() > 2 ? params.get(2) : "F"; // debug (기본값: "F")
+
+        List<String> finalParams = new ArrayList<>();
+        finalParams.add(empNo);             // empNo를 params 앞에 추가
+        finalParams.add(dbCreatedDt);
+        finalParams.add(debug);
+
+        logger.debug("Delete params: {}", finalParams);
+
+        List<Map<String, Object>> unescapedResultList;
+        try {
+            // mapViewProcessor로 프로시저 호출
+            unescapedResultList = mapViewProcessor.processDynamicView(rptCd, finalParams, empNo, jobGb);
+            if (unescapedResultList.isEmpty()) {
+                return responseEntityUtil.okBodyEntity(null, "01", "삭제 결과가 없습니다.");
+            }
+        } catch (Exception e) {
+            errorMessage = "/delete unescapedResultList = mapViewProcessor.processDynamicView(rptCd, params, empNo, jobGb);";
+            logger.error(this.getErrorMessage(), e);
+            return responseEntityUtil.okBodyEntity(null, "99", "서버 내부 오류가 발생했습니다: " + e.getMessage());
+        }
+
+        return responseEntityUtil.okBodyEntity(unescapedResultList, "00", "삭제 성공");
     }
 
 }
