@@ -1,0 +1,65 @@
+# 빌드 아티팩트
+/build/
+/target/
+/out/
+*.class
+*.jar
+*.war
+*.ear
+
+# 환경 파일
+.env
+.env.dev
+
+# Gradle 캐시
+.gradle/build/
+.gradle/cache/
+
+# IDE 관련 파일
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.code-workspace
+
+# 로그 파일
+*.log
+logs/
+*.log.*
+
+# 데이터베이스 및 환경 설정
+application-local.yml
+application-dev.yml
+application-prod.yml
+*.yml
+!application.yml
+!application.properties
+!gradle.properties
+
+# 테스트 및 임시 파일
+*.swp
+*~
+*.bak
+*.tmp
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# 의존성 캐시
+/.m2/
+/.m2/repository/
+
+# 데이터베이스 파일
+*.db
+*.sqlite3
+
+# 기타
+*.pid
+*.seed
+*.rdb
+*.lock
