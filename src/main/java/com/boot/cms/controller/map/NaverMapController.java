@@ -15,7 +15,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.HashMap;
 import java.util.Map;
 
-@CrossOrigin(origins = {"https://jh9695.github.io", "https://jh9695-backend.cloudtype.app"})
+@CrossOrigin(origins = {"http://localhost:5173", "https://your-frontend.cloudtype.app", "https://jh9695.github.io", "https://jh9695-backend.cloudtype.app"})
 @RestController
 @RequestMapping("/api/naver")
 public class NaverMapController {
