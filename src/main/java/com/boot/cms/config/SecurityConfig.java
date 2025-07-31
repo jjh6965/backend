@@ -49,21 +49,17 @@ public class SecurityConfig {
         }
 
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // CORS 설정 적용
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))  // CSRF 예외 처리
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/cms/api/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**")
-                        .permitAll() // Swagger UI와 OpenAPI Docs 허용
-                        .requestMatchers("/api/public/**", "/api/auth/**")
-                        .permitAll() // 공개 API 허용
-                        .requestMatchers("/api/**")
-                        .authenticated() // /api/** 인증 필요
-                        .anyRequest()
-                        .authenticated()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/public/**", "/api/auth/**", "/api/naver/**", "/cms/api/naver/**", "/api/chatbot/**").permitAll() // 하위 경로 포함하도록 수정
+                        .requestMatchers("/api/**", "/cms/api/**").authenticated()
+                        .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class) // JWT 인증 필터
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) -> {  // 인증 실패 처리
+                        .authenticationEntryPoint((req, res, e) -> {
                             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             res.setContentType("application/json");
                             res.getWriter().write("{\"success\": false, \"message\": \"Unauthorized\"}");
@@ -85,8 +81,9 @@ public class SecurityConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
-        source.registerCorsConfiguration("/v3/api-docs/**", configuration); // CORS for Swagger
-        source.registerCorsConfiguration("/swagger-ui/**", configuration); // CORS for Swagger UI
+        source.registerCorsConfiguration("/cms/api/**", configuration);
+        source.registerCorsConfiguration("/v3/api-docs/**", configuration);
+        source.registerCorsConfiguration("/swagger-ui/**", configuration);
         return source;
     }
 
@@ -104,10 +101,10 @@ public class SecurityConfig {
             }
         }
 
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Swagger에서 authorization 읽기 가능하도록
-        configuration.setAllowCredentials(true); // JWT 같은 인증 데이터를 허용
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
 
         return configuration;
     }
@@ -115,7 +112,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            LoginEntity user = loginMapper.loginCheck(username, null); // Password not needed for JWT
+            LoginEntity user = loginMapper.loginCheck(username, null);
             if (user == null) {
                 throw new UsernameNotFoundException("User not found: " + username);
             }

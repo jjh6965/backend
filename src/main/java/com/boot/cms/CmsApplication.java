@@ -8,12 +8,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
 @MapperScan("com.boot.cms.mapper.**")
+@ComponentScan(basePackages = {"com.boot.cms"}) // 전체 패키지 스캔
 public class CmsApplication {
 	private static final Logger logger = LoggerFactory.getLogger(CmsApplication.class);
 
