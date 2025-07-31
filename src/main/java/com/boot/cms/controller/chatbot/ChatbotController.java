@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/chatbot")
-@CrossOrigin(origins = {"http://localhost:5173", "https://your-frontend.cloudtype.app", "https://jh9695-backend.cloudtype.app"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "https://jjh6965.github.io/cms"}, allowCredentials = "true")
 public class ChatbotController {
     @Autowired
     private ChatbotService chatbotService;
