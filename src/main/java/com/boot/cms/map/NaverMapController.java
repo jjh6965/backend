@@ -39,7 +39,6 @@ public class NaverMapController {
             return ResponseEntity.status(500).body(Map.of("error", "Client ID is not configured"));
         }
         response.put("clientId", clientId);
-        response.put("debug", "Provided clientId: " + clientId + ", secret: [hidden]");
         return ResponseEntity.ok(response);
     }
 
