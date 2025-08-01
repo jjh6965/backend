@@ -35,10 +35,11 @@ public class NaverMapController {
     @GetMapping("/client-id")
     public ResponseEntity<Map<String, String>> getClientId() {
         Map<String, String> response = new HashMap<>();
-        // 인증 없이 clientId 반환하도록 허용
+        // 인증 없이 clientId 반환, 인증 실패 시 명시적 에러
         if (clientId == null || clientId.trim().isEmpty()) {
             return ResponseEntity.status(500).body(Map.of("error", "Client ID is not configured"));
         }
+        // 인증 필터 우회를 위해 공개적으로 허용
         response.put("clientId", clientId);
         return ResponseEntity.ok(response);
     }
