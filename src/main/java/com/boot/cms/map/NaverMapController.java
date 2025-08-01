@@ -35,12 +35,11 @@ public class NaverMapController {
     @GetMapping("/client-id")
     public ResponseEntity<Map<String, String>> getClientId() {
         Map<String, String> response = new HashMap<>();
-        // 인증 없이 clientId 반환, 인증 실패 시 명시적 에러
         if (clientId == null || clientId.trim().isEmpty()) {
             return ResponseEntity.status(500).body(Map.of("error", "Client ID is not configured"));
         }
-        // 인증 필터 우회를 위해 공개적으로 허용
         response.put("clientId", clientId);
+        response.put("debug", "Provided clientId: " + clientId + ", secret: [hidden]");
         return ResponseEntity.ok(response);
     }
 
@@ -50,9 +49,11 @@ public class NaverMapController {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-NCP-APIGW-API-KEY-ID", clientId);
         headers.set("X-NCP-APIGW-API-KEY", clientSecret);
+        headers.set("Content-Type", "application/json");
 
         String url = UriComponentsBuilder.fromHttpUrl(geocodeUrl)
                 .queryParam("query", fixedAddress)
+                .queryParam("output", "json")
                 .build()
                 .toString();
 
@@ -60,8 +61,10 @@ public class NaverMapController {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+            System.out.println("Geocode API Response: " + response.getBody());
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
+            System.err.println("Geocode API Error: " + e.getMessage());
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
