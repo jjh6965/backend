@@ -15,10 +15,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/naver")
 @CrossOrigin(origins = {"http://localhost:5173", "https://jjh6965.github.io/cms", "https://port-0-java-springboot-mbebujvsfb073e29.sel4.cloudtype.app"}, allowCredentials = "true")
 public class NaverMapController {
+
+    private static final Logger log = LoggerFactory.getLogger(NaverMapController.class);
 
     @Value("${naver.map.client-id}")
     private String clientId;
@@ -32,14 +37,24 @@ public class NaverMapController {
     @Value("${naver.map.fixed-address}")
     private String fixedAddress;
 
+    // @PostConstruct 제거
+    // public void init() {
+    //     log.debug("NaverMapController initialized with clientId: {}", clientId);
+    //     if (clientId == null || clientId.trim().isEmpty()) {
+    //         log.error("Client ID is not properly injected. Check application.properties or environment variables.");
+    //     }
+    // }
+
     @GetMapping("/client-id")
     public ResponseEntity<Map<String, String>> getClientId() {
         Map<String, String> response = new HashMap<>();
         if (clientId == null || clientId.trim().isEmpty()) {
+            log.error("Client ID is not configured during request processing");
             return ResponseEntity.status(500).body(Map.of("error", "Client ID is not configured"));
         }
         response.put("clientId", clientId);
         response.put("debug", "Provided clientId: " + clientId + ", secret: [hidden]");
+        log.debug("Returning clientId: {}", clientId);
         return ResponseEntity.ok(response);
     }
 
@@ -61,10 +76,10 @@ public class NaverMapController {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-            System.out.println("Geocode API Response: " + response.getBody());
+            log.debug("Geocode API Response: {}", response.getBody());
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
-            System.err.println("Geocode API Error: " + e.getMessage());
+            log.error("Geocode API Error: {}", e.getMessage());
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
     }
