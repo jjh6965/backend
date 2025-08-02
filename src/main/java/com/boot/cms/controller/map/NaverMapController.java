@@ -1,4 +1,4 @@
-package com.boot.cms.map;
+package com.boot.cms.controller.map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
