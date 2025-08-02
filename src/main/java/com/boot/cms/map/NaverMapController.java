@@ -37,13 +37,12 @@ public class NaverMapController {
     @Value("${naver.map.fixed-address}")
     private String fixedAddress;
 
-    // @PostConstruct 제거
-    // public void init() {
-    //     log.debug("NaverMapController initialized with clientId: {}", clientId);
-    //     if (clientId == null || clientId.trim().isEmpty()) {
-    //         log.error("Client ID is not properly injected. Check application.properties or environment variables.");
-    //     }
-    // }
+    public NaverMapController() {
+        log.debug("NaverMapController instantiated with clientId: {}", clientId);
+        if (clientId == null || clientId.trim().isEmpty()) {
+            log.error("Client ID is not properly injected. Check application.properties or environment variables.");
+        }
+    }
 
     @GetMapping("/client-id")
     public ResponseEntity<Map<String, String>> getClientId() {
